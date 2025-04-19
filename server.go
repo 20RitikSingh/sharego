@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	_ "embed"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 
@@ -18,7 +19,7 @@ var certPEM []byte
 var keyPEM []byte
 
 func main() {
-	// log.SetOutput(io.Discard)
+	log.SetOutput(io.Discard)
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /upload", handler.UploadHandler)
 	mux.HandleFunc("GET /file/", handler.FileServerHandler)
