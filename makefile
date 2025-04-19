@@ -53,7 +53,7 @@ build:
 	@echo Build complete!
 
 build-for-all:
-	@GOOS=windows GOARCH=amd64 go build -o $(DIST_DIR)/$(BINARY_NAME)-windows-amd64.exe
+	@GOOS=windows GOARCH=amd64 go build -ldflags="-s -w" -trimpath -o $(DIST_DIR)/$(BINARY_NAME)-windows-amd64.exe
 	@GOOS=linux GOARCH=amd64 go build -o $(DIST_DIR)/$(BINARY_NAME)-linux-amd64
 	@GOOS=linux GOARCH=arm go build -o $(DIST_DIR)/$(BINARY_NAME)-linux-arm
 	@GOOS=linux GOARCH=arm64 go build -o $(DIST_DIR)/$(BINARY_NAME)-linux-arm64
