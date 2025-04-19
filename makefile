@@ -31,7 +31,7 @@ test:
 
 ci: 
 	@echo "Running CI tasks..."
-	vet lint test build-for-all
+	@make vet lint test build-for-all
 	@echo "CI tasks completed."
 
 run:
