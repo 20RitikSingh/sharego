@@ -6,6 +6,9 @@ on:
     tags:
       - 'v*'  # e.g., v1.0.0
 
+permissions:
+  contents: write # for uploading release assets
+
 jobs:
   build:
     runs-on: ubuntu-latest
