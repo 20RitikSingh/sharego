@@ -26,6 +26,7 @@ jobs:
 
     - name: Set up TLS cert and key from GitHub secrets
       run: |
+        mkdir -p certs
         echo "$TLS_CERT" > certs/tls_cert.pem
         echo "$TLS_KEY" > certs/tls_key.pem
       env:
