@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -15,6 +16,10 @@ func FileListHandler(w http.ResponseWriter, r *http.Request) {
 	path := strings.TrimPrefix(r.URL.Path, "/list/")
 	if strings.HasPrefix(path, "..") {
 		http.Error(w, "Invalid path", http.StatusBadRequest)
+	}
+	path, err := url.PathUnescape(path)
+	if err != nil {
+		log.Println("error getting unescaped path")
 	}
 	// log.Println(path)
 	entries, err := os.ReadDir("./" + path)
@@ -27,9 +32,9 @@ func FileListHandler(w http.ResponseWriter, r *http.Request) {
 	const listItem = `
     <li class="list-group-item">
 		{{if .IsDir}}
-        <a href="/{{.Name}}" class="text-decoration-none">
+        <a href="/{{.Path}}" class="text-decoration-none">
 		{{else}}
-        <a href="/file/{{.Name}}" download class="text-decoration-none">
+        <a href="/file/{{.Path}}" download class="text-decoration-none">
 		{{end}}
 		<i class="bi {{if .IsDir}}bi-folder-fill{{else}}bi-file-earmark{{end}} me-2"></i>
 		{{if .IsDir}}📂{{else}}📄{{end}}{{.Name}}
@@ -50,9 +55,11 @@ func FileListHandler(w http.ResponseWriter, r *http.Request) {
 
 		tpl := template.Must(template.New("").Parse(listItem))
 		err := tpl.Execute(&output, struct {
+			Path  string
 			Name  string
 			IsDir bool
 		}{
+			Path:  filepath.Join(path, name),
 			Name:  name,
 			IsDir: entry.IsDir(),
 		})
@@ -72,6 +79,10 @@ func FileListHandler(w http.ResponseWriter, r *http.Request) {
 
 func FileServerHandler(w http.ResponseWriter, r *http.Request) {
 	path := strings.TrimPrefix(r.URL.Path, "/file/")
+	path, err := url.PathUnescape(path)
+	if err != nil {
+		log.Println("error getting unescaped path")
+	}
 	log.Println(path)
 	// Security check to prevent directory traversal
 	if strings.Contains(path, "..") {
@@ -79,6 +90,6 @@ func FileServerHandler(w http.ResponseWriter, r *http.Request) {
 		log.Println("err with path")
 		return
 	}
-	w.Header().Set("Content-Disposition", "attachment; filename="+path)
+	w.Header().Set("Content-Disposition", "attachment; filename="+filepath.Base(path))
 	http.ServeFile(w, r, filepath.Join(".", path))
 }
