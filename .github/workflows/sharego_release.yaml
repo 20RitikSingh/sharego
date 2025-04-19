@@ -1,0 +1,43 @@
+name: sharego_release
+# This workflow builds and releases the sharego application for multiple platforms
+
+on:
+  push:
+    tags:
+      - 'v*'  # e.g., v1.0.0
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.23'
+
+    - name: Install golangci-lint
+      run: |
+        curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s latest
+        sudo mv ./bin/golangci-lint /usr/local/bin/
+
+    - name: Set up TLS cert and key from GitHub secrets
+      run: |
+        echo "$TLS_CERT" > certs/tls_cert.pem
+        echo "$TLS_KEY" > certs/tls_key.pem
+      env:
+        TLS_CERT: ${{ secrets.TLS_CERT }}
+        TLS_KEY: ${{ secrets.TLS_KEY }}
+
+    - name: Run CI via Makefile
+      run: make ci
+
+    - name: Upload binaries to GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: dist/*
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

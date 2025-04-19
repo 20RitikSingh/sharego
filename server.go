@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	_ "embed"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 
@@ -11,22 +12,23 @@ import (
 	"github.com/skip2/go-qrcode"
 )
 
-//go:embed cert/cert.pem
+//go:embed certs/cert.pem
 var certPEM []byte
 
-//go:embed cert/key.pem
+//go:embed certs/key.pem
 var keyPEM []byte
 
 func main() {
+	log.SetOutput(io.Discard)
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /upload", handler.UploadHandler)
 	mux.HandleFunc("GET /file/", handler.FileServerHandler)
 	mux.HandleFunc("GET /list/", handler.FileListHandler)
+	mux.HandleFunc("GET /downloadzip/", handler.ZipHandler)
 	mux.HandleFunc("GET /", handler.HomeHandler)
 	cert, err := tls.X509KeyPair(certPEM, keyPEM)
 	if err != nil {
 		println("failed to load tls certificate: ", err)
-		fmt.Scanln("enter any key to exit!!")
 		return
 	}
 	server := http.Server{
@@ -38,9 +40,8 @@ func main() {
 		},
 	}
 	addrs, err := getInterfaceAddrs()
-	if err != nil {
+	if err != nil || len(addrs) == 0 {
 		log.Println("error getting network interface: ", err)
-		fmt.Scanln("enter any key to exit!!")
 		return
 	}
 	for i, addr := range addrs {
@@ -57,7 +58,6 @@ func main() {
 	err = server.ListenAndServeTLS("", "")
 	if err != nil {
 		log.Println(err)
-		fmt.Scanln("enter any key to exit!!")
 		return
 	}
 

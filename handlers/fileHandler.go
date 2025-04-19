@@ -65,7 +65,9 @@ func FileListHandler(w http.ResponseWriter, r *http.Request) {
 	output.WriteString(`</ul>`)
 
 	w.Header().Set("Content-Type", "text/html")
-	fmt.Fprint(w, output.String())
+	if _, err = fmt.Fprint(w, output.String()); err != nil {
+		log.Println("error writing response ", err)
+	}
 }
 
 func FileServerHandler(w http.ResponseWriter, r *http.Request) {
@@ -80,7 +82,3 @@ func FileServerHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Disposition", "attachment; filename="+path)
 	http.ServeFile(w, r, filepath.Join(".", path))
 }
-
-// func serveFileWithOffset(path string, offset int, wg *sync.WaitGroup) ([]byte, error) {
-// 	os.OpenFile(path,os.O_RDONLY,)
-// }

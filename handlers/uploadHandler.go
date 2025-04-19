@@ -3,6 +3,7 @@ package handler
 import (
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 )
@@ -16,7 +17,11 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error retrieving file", http.StatusBadRequest)
 		return
 	}
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			log.Println("error closing file ", err)
+		}
+	}()
 
 	// Create the file
 	dst, err := os.Create(handler.Filename)
@@ -24,7 +29,11 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error creating file", http.StatusInternalServerError)
 		return
 	}
-	defer dst.Close()
+	defer func() {
+		if err := dst.Close(); err != nil {
+			log.Println("error closing file ", err)
+		}
+	}()
 
 	// Copy the uploaded file data
 	if _, err := io.Copy(dst, file); err != nil {
@@ -33,5 +42,8 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "text/html")
-	fmt.Fprint(w, `<div class="alert alert-success mt-3">File uploaded successfully</div>`)
+	_, err = fmt.Fprint(w, `<div class="alert alert-success mt-3">File uploaded successfully</div>`)
+	if err != nil {
+		log.Println(err)
+	}
 }

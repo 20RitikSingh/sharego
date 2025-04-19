@@ -1,60 +1,562 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-bs-theme="light">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>File Sharing App</title>
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>ShareGo - Simple File Sharing</title>
+    <!-- Bootstrap 5.3 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- HTMX -->
     <script src="https://unpkg.com/htmx.org@1.9.2"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4361ee;
+            --secondary: #3f37c9;
+            --success: #4cc9f0;
+            --light: #f8f9fa;
+            --dark: #212529;
+        }
+        
+        [data-bs-theme="dark"] {
+            --primary: #4cc9f0;
+            --secondary: #4895ef;
+            --bs-body-bg: #121212;
+            --bs-body-color: #e9ecef;
+            --bs-card-bg: #1e1e1e;
+            --bs-card-border-color: #333;
+            --bs-border-color: #333;
+        }
+        
+        body {
+            background-color: var(--bs-body-bg, #f5f7fb);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            transition: background-color 0.3s ease;
+        }
+        
+        .navbar-brand {
+            font-weight: 700;
+            color: var(--primary);
+        }
+        
+        .card {
+            border-radius: 12px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+            border: none;
+            transition: transform 0.2s, background-color 0.3s;
+        }
+        
+        [data-bs-theme="dark"] .card {
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        .card:hover {
+            transform: translateY(-3px);
+        }
+        
+        .card-header {
+            border-top-left-radius: 12px !important;
+            border-top-right-radius: 12px !important;
+            background-color: transparent;
+            border-bottom: 1px solid var(--bs-border-color, rgba(0, 0, 0, 0.05));
+            font-weight: 600;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary);
+            border-color: var(--primary);
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--secondary);
+            border-color: var(--secondary);
+        }
+        
+        .progress {
+            height: 8px;
+            border-radius: 4px;
+        }
+        
+        .progress-bar {
+            background-color: var(--primary);
+        }
+        
+        .file-upload-area {
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        
+        [data-bs-theme="dark"] .file-upload-area {
+            border-color: #555;
+        }
+        
+        .file-upload-area:hover, .file-upload-area.dragover {
+            border-color: var(--primary);
+            background-color: rgba(67, 97, 238, 0.05);
+        }
+        
+        [data-bs-theme="dark"] .file-upload-area:hover, 
+        [data-bs-theme="dark"] .file-upload-area.dragover {
+            background-color: rgba(76, 201, 240, 0.1);
+        }
+        
+        .file-upload-text {
+            color: var(--bs-secondary-color, #6c757d);
+        }
+        
+        .file-item {
+            background-color: var(--bs-card-bg, #fff);
+            border-radius: 8px;
+            border: 1px solid var(--bs-border-color, rgba(0, 0, 0, 0.05));
+            transition: all 0.2s;
+        }
+        
+        .file-item:hover {
+            background-color: rgba(67, 97, 238, 0.05);
+        }
+        
+        [data-bs-theme="dark"] .file-item:hover {
+            background-color: rgba(76, 201, 240, 0.1);
+        }
+        
+        .file-icon {
+            font-size: 20px;
+            width: 30px;
+            text-align: center;
+        }
+        
+        .file-actions {
+            opacity: 0.6;
+            transition: opacity 0.2s;
+        }
+        
+        .file-item:hover .file-actions {
+            opacity: 1;
+        }
+        
+        .breadcrumb {
+            background-color: transparent;
+            padding: 0;
+            margin-bottom: 1rem;
+        }
+        
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1050;
+        }
+        
+        .path-item {
+            cursor: pointer;
+            color: var(--primary);
+        }
+        
+        #upload-status.uploading {
+            color: var(--primary);
+            font-weight: 500;
+        }
+        
+        #upload-status.success {
+            color: #2ecc71;
+            font-weight: 500;
+        }
+        
+        #upload-status.error {
+            color: #e74c3c;
+            font-weight: 500;
+        }
+        
+        /* Dark mode toggle styles */
+        .dark-mode-toggle {
+            cursor: pointer;
+            width: 60px;
+            position: relative;
+        }
+        
+        .theme-switch {
+            display: inline-block;
+            height: 24px;
+            position: relative;
+            width: 50px;
+        }
+        
+        .theme-switch input {
+            display: none;
+        }
+        
+        .slider {
+            background-color: #ccc;
+            bottom: 0;
+            cursor: pointer;
+            left: 0;
+            position: absolute;
+            right: 0;
+            top: 0;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        
+        .slider:before {
+            background-color: white;
+            bottom: 4px;
+            content: "";
+            height: 16px;
+            left: 4px;
+            position: absolute;
+            transition: .4s;
+            width: 16px;
+            border-radius: 50%;
+        }
+        
+        input:checked + .slider {
+            background-color: var(--primary);
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+        
+        .theme-icon {
+            font-size: 14px;
+            position: absolute;
+            top: 5px;
+            z-index: 1;
+            color: #fff;
+        }
+        
+        .sun-icon {
+            left: 6px;
+            opacity: 1;
+            transition: opacity 0.3s;
+        }
+        
+        .moon-icon {
+            right: 6px;
+            opacity: 1;
+            transition: opacity 0.3s;
+        }
+        
+        input:checked ~ .sun-icon {
+            opacity: 0;
+        }
+        
+        input:not(:checked) ~ .moon-icon {
+            opacity: 0;
+        }
+    </style>
 </head>
-<body class="container mt-4">
+
+<body>
     <!-- Progress bar animation script -->
     <script>
-        document.addEventListener('htmx:xhr:progress', function(evt) {
-            const progress = document.querySelector('.progress-bar');
-            progress.style.width = `${evt.detail.loaded/evt.detail.total * 100}%`;
+        // Check for saved theme preference or use system preference
+        document.addEventListener('DOMContentLoaded', function() {
+            const themeToggleSwitch = document.getElementById('theme-switch');
+            const htmlElement = document.documentElement;
+            
+            // Check for saved theme preference
+            const savedTheme = localStorage.getItem('theme');
+            
+            // If theme preference exists, apply it
+            if (savedTheme) {
+                htmlElement.setAttribute('data-bs-theme', savedTheme);
+                themeToggleSwitch.checked = savedTheme === 'dark';
+            } else {
+                // Check for system preference
+                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                if (prefersDark) {
+                    htmlElement.setAttribute('data-bs-theme', 'dark');
+                    themeToggleSwitch.checked = true;
+                    localStorage.setItem('theme', 'dark');
+                }
+            }
+            
+            // Toggle theme when switch is clicked
+            themeToggleSwitch.addEventListener('change', function() {
+                if (this.checked) {
+                    htmlElement.setAttribute('data-bs-theme', 'dark');
+                    localStorage.setItem('theme', 'dark');
+                } else {
+                    htmlElement.setAttribute('data-bs-theme', 'light');
+                    localStorage.setItem('theme', 'light');
+                }
+            });
+            
+            // Setup drag and drop
+            const uploadArea = document.getElementById('file-upload-area');
+            const fileInput = document.getElementById('file-input');
+            
+            uploadArea.addEventListener('click', function() {
+                fileInput.click();
+            });
+            
+            uploadArea.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                this.classList.add('dragover');
+            });
+            
+            uploadArea.addEventListener('dragleave', function() {
+                this.classList.remove('dragover');
+            });
+            
+            uploadArea.addEventListener('drop', function(e) {
+                e.preventDefault();
+                this.classList.remove('dragover');
+                fileInput.files = e.dataTransfer.files;
+                
+                // Update file name display
+                updateFileNameDisplay();
+            });
+            
+            fileInput.addEventListener('change', function() {
+                updateFileNameDisplay();
+            });
+            
+            function updateFileNameDisplay() {
+                const fileCount = fileInput.files.length;
+                const fileNamesElement = document.getElementById('file-names');
+                
+                if (fileCount > 0) {
+                    let fileNames = '';
+                    
+                    if (fileCount === 1) {
+                        fileNames = `<strong>Selected:</strong> ${fileInput.files[0].name}`;
+                    } else {
+                        fileNames = `<strong>Selected:</strong> ${fileCount} files`;
+                    }
+                    
+                    fileNamesElement.innerHTML = fileNames;
+                    fileNamesElement.classList.remove('d-none');
+                } else {
+                    fileNamesElement.classList.add('d-none');
+                }
+            }
         });
-    </script>
 
-    
-    <h1 class="mb-4">ShareGo</h1>
-    
-    <!-- File Upload Section -->
-    <div class="card mb-4">
-        <div class="card-header">Upload File</div>
-        <div class="card-body">
-            <form hx-post="/upload" 
-                  hx-encoding="multipart/form-data"
-                  hx-indicator="#progress"
-                  class="dropzone"
-                  _="on htmx:xhr:progress(loaded, total) 
-                        set :loaded to loaded/total*100
-                        set progress.value to loaded">
-                <div class="mb-3">
-                    <input type="file" multiple name="file" class="form-control" required>
-                </div>
-                <div class="progress mb-3">
-                    <div id="progress" class="progress-bar" role="progressbar" 
-                         style="width: 0%" aria-valuenow="0" 
-                         aria-valuemin="0" aria-valuemax="100">
+        // HTMX event listeners
+        document.addEventListener('htmx:responseError', function () {
+            document.getElementById('upload-status').innerText = "❌ Upload failed";
+            document.getElementById('upload-status').className = "mb-3 error";
+            
+            // Show toast notification
+            showToast('Upload failed', 'An error occurred during file upload.', 'danger');
+        });
+
+        document.addEventListener('htmx:xhr:progress', function (evt) {
+            const progressBar = document.getElementById('progress-bar');
+            const percent = (evt.detail.loaded / evt.detail.total) * 100;
+            progressBar.style.width = `${percent}%`;
+            
+            const uploadStatus = document.getElementById('upload-status');
+            uploadStatus.innerText = `Uploading... ${percent.toFixed(0)}%`;
+            uploadStatus.className = "mb-3 uploading";
+            
+            progressBar.setAttribute('aria-valuenow', percent.toFixed(0));
+        });
+        
+        document.addEventListener('htmx:afterRequest', function(evt) {
+            if (evt.detail.elt.id === 'upload-form' && evt.detail.successful) {
+                document.getElementById('upload-status').innerText = "✅ Upload successful!";
+                document.getElementById('upload-status').className = "mb-3 success";
+                document.getElementById('file-input').value = '';
+                document.getElementById('file-names').classList.add('d-none');
+                
+                // Reset progress bar
+                setTimeout(function() {
+                    document.getElementById('progress-bar').style.width = '0%';
+                    document.getElementById('upload-status').innerText = '';
+                }, 3000);
+                
+                // Show toast notification
+                showToast('Upload successful', 'Your files have been uploaded.', 'success');
+            }
+        });
+        
+        function showToast(title, message, type) {
+            const toastContainer = document.getElementById('toast-container');
+            const toastId = 'toast-' + Date.now();
+            
+            const toast = `
+                <div id="${toastId}" class="toast align-items-center text-white bg-${type} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            <strong>${title}</strong> ${message}
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
                     </div>
                 </div>
-                <button type="submit" class="btn btn-primary">Upload</button>
-            </form>
+            `;
+            
+            toastContainer.innerHTML += toast;
+            
+            const toastElement = document.getElementById(toastId);
+            const bsToast = new bootstrap.Toast(toastElement, {
+                autohide: true,
+                delay: 5000
+            });
+            
+            bsToast.show();
+            
+            // Remove the toast element after it's hidden
+            toastElement.addEventListener('hidden.bs.toast', function() {
+                this.remove();
+            });
+        }
+    </script>
+
+    <!-- Toast container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-light">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-share-nodes me-2"></i>ShareGo
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/" hx-get="/list/" hx-target="#list-wrapper">
+                            <i class="fas fa-house me-1"></i>Home
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" onclick="document.getElementById('file-input').click()">
+                            <i class="fas fa-upload me-1"></i>Upload
+                        </a>
+                    </li>
+                    <li class="nav-item d-flex align-items-center ms-2">
+                        <label class="theme-switch" title="Toggle Dark Mode">
+                            <input type="checkbox" id="theme-switch">
+                            <span class="slider"></span>
+                            <i class="fas fa-sun theme-icon sun-icon"></i>
+                            <i class="fas fa-moon theme-icon moon-icon"></i>
+                        </label>
+                    </li>
+                </ul>
+            </div>
         </div>
-    </div>
-    <!-- File List Section -->
-    <div class="card mb-4">
-        <div class="card-header">
-            Files and Directories
-        </div>
-        <div class="card-body" id="list-wrapper" hx-get="/list{{.Path}}" hx-trigger="load, every 5s">
-            Loading files...
+    </nav>
+
+    <div class="container">
+        <!-- Breadcrumb navigation -->
+        <nav aria-label="breadcrumb" class="mb-3">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/" hx-get="/list/" hx-target="#list-wrapper">Home</a></li>
+                <!-- Dynamic breadcrumb items would be generated here -->
+                <!-- Example: <li class="breadcrumb-item"><a href="#" hx-get="/list/folder1" hx-target="#list-wrapper">folder1</a></li> -->
+                <li class="breadcrumb-item active" aria-current="page">Current Directory</li>
+            </ol>
+        </nav>
+
+        <div class="row">
+            <!-- File Upload Section -->
+            <div class="col-md-5 mb-4">
+                <div class="card h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-upload me-2"></i>Upload Files</span>
+                    </div>
+                    <div class="card-body">
+                        <form id="upload-form" hx-post="/upload" hx-encoding="multipart/form-data" hx-trigger="submit">
+                            <div id="file-upload-area" class="file-upload-area mb-3">
+                                <i class="fas fa-cloud-upload-alt fa-3x mb-3 text-primary"></i>
+                                <h5>Drop files here or click to browse</h5>
+                                <p class="file-upload-text mb-0">Upload multiple files at once</p>
+                                <input id="file-input" type="file" multiple name="file" class="d-none" required>
+                            </div>
+                            
+                            <div id="file-names" class="alert alert-info mb-3 d-none">
+                                <!-- File names will appear here -->
+                            </div>
+
+                            <div class="progress mb-3">
+                                <div id="progress-bar" class="progress-bar" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                                </div>
+                            </div>
+
+                            <div id="upload-status" class="mb-3"></div>
+
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-paper-plane me-2"></i>Upload Now
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- File List Section -->
+            <div class="col-md-7 mb-4">
+                <div class="card h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-folder-open me-2"></i>Files and Directories</span>
+                        <div>
+                            <button class="btn btn-outline-primary btn-sm me-2" hx-get="/list{{.Path}}" hx-target="#list-wrapper">
+                                <i class="fas fa-sync-alt me-1"></i>Refresh
+                            </button>
+                            <a href="/downloadzip{{.Path}}" download class="btn btn-primary btn-sm" 
+                               onclick="this.classList.add('disabled'); this.innerHTML='<i class=\'fas fa-spinner fa-spin me-1\'></i>Preparing...'; this.style.pointerEvents='none';">
+                                <i class="fas fa-download me-1"></i>Download All
+                            </a>
+                        </div>
+                    </div>
+                    <div class="card-body p-0" id="list-wrapper" hx-get="/list{{.Path}}" hx-trigger="load, every 10s">
+                        <!-- Loading animation -->
+                        <div class="text-center py-5">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2">Loading files...</p>
+                        </div>
+                        
+                        <!-- Example of how file listing might look -->
+                        <!--
+                        <div class="list-group list-group-flush">
+                            <a href="#" class="list-group-item list-group-item-action file-item d-flex align-items-center">
+                                <div class="file-icon text-primary me-3">
+                                    <i class="fas fa-folder"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-0">Documents</h6>
+                                    <small class="text-muted">Directory</small>
+                                </div>
+                                <div class="file-actions">
+                                    <button class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-arrow-right"></i>
+                                    </button>
+                                </div>
+                            </a>
+                            
+                            <a href="#" class="list-group-item list-group-item-action file-item d-flex align-items-center">
+                                <div class="file-icon text-danger me-3">
+                                    <i class="fas fa-file-pdf"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-0">report.pdf</h6>
+                                    <small class="text-muted">1.2 MB - Apr 19, 2025</small>
+                                </div>
+                                <div class="file-actions">
+                                    <button class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-download"></i>
+                                    </button>
+                                </div>
+                            </a>
+                        </div>
+                        -->
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
-
-</body>
-</html>
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
