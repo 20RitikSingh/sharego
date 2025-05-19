@@ -1,4 +1,4 @@
 *.html linguist-detectable=false
-Makefile linguist-detectable=false
+makefile linguist-detectable=false
 *.yaml linguist-detectable=false
 *.md linguist-detectable=false
