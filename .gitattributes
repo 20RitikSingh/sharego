@@ -1,1 +1,3 @@
 *.html linguist-detectable=false
+Makefile linguist-detectable=false
+*.md linguist-detectable=false
